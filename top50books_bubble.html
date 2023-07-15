@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .chart {
+      width: 800px;
+      height: 600px;
+    }
+    .node {
+      fill: steelblue;
+      stroke: #fff;
+      cursor: pointer;
+    }
+    .text {
+      font-size: 12px;
+      text-anchor: middle;
+    }
+    .axis {
+      font-size: 10px;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+    }
+  </style>
+</head>
+
+<body>
+  <svg class="chart"></svg>
+
+  <script>
+      // Constants
+      const WIDTH_ORIG        = 800;
+      const HEIGHT_ORIG       = 600;
+      const MARGIN            = { top: 100, right: 20, bottom: 60, left: 80 };
+      const WIDTH             = WIDTH_ORIG - MARGIN.left - MARGIN.right;
+      const HEIGHT            = HEIGHT_ORIG - MARGIN.top - MARGIN.bottom;
+
+      const TITLE             = "GoodReads Best Books Ever - Top 50"
+      const X_LABEL           = "Pages"
+      const Y_LABEL           = "Votes"
+      const Y_LABEL_X         = -MARGIN.left/1.5
+      const Y_LABEL_Y         = HEIGHT/2
+      const COLOR_NORMAL      = "steelblue"
+      const COLOR_SELECTED    = "#69b3a2"
+
+      const RADIUS_BASE = 10
+
+      const svg = d3.select(".chart")
+          .attr("width", WIDTH).attr("height", HEIGHT)
+          .append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
+
+      // Read and process data - BEGIN
+      console.log("Reading csv")
+      d3.csv("data/books_gr_1.csv").then(function(data) {
+        console.log("Read csv")
+
+        // Process CSV data - map the required fields
+        const books = data.map(d => ({
+          title:       d.title,
+          pages:      +d.pages,
+          votes:      +d.bbeVotes,
+          numawards:  +d.num_awards
+        }));
+
+        console.log("books", books.length, 
+                    "Max Pages:", d3.max(books, d => +d.pages),
+                    "Max Votes:", d3.max(books, d => +d.votes),)
+
+        // Set up the x and y-axes
+        X_MAX = 1800, Y_MAX = 35000
+        const xScale = d3.scaleLinear()
+          .domain([0, X_MAX])
+          .range([0, WIDTH]);
+        const xAxis = d3.axisBottom(xScale);
+        svg.append("g")
+          .attr("class", "x-axis")
+          .attr("transform", `translate(0, ${HEIGHT})`)
+          .call(xAxis);
+
+        const yScale =  d3.scaleLinear()
+          .domain([Y_MAX, 0]) 
+          .range([0, HEIGHT])
+        const yAxis = d3.axisLeft(yScale)
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(yAxis);
+
+        // Set up the bubbles
+        const nodes = svg.selectAll(".node")
+          .data(books).enter()
+          .append("circle")
+            .attr("class", "node")
+            .attr("r",  d => RADIUS_BASE + +d.numawards)
+            .attr("cx", d => xScale(+d.pages))
+            .attr("cy", d => yScale(+d.votes))
+            .style("opacity", "0.7")
+          .on("mouseover", handleMouseOver)
+          .on("mouseout", handleMouseOut);
+        console.log("nodes", nodes)
+
+        // Set up the hover-over texts
+        const labels = svg.selectAll(".text")
+          .data(books).enter()
+          .append("text")
+            .attr("class", "text")
+            .attr("x", d => xScale(+d.pages))
+            .attr("y", d => (yScale(+d.votes))) 
+            .text(d => `${d.title} - ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
+            .style("visibility", "hidden");
+
+        // Set up the Title, axes labels
+        svg.append("text").attr("class", "title")
+          .attr("x", WIDTH / 4).attr("y", -MARGIN.top / 2)
+          .text(TITLE).style("font-family","Comic Sans MS");
+        svg.append("text").attr("class", "axis-label")
+          .attr("x", WIDTH / 3).attr("y", HEIGHT + MARGIN.bottom / 1.5).text(X_LABEL);
+        svg.append("text").attr("class", "axis-label")
+          .attr("x", Y_LABEL_X ).attr("y", Y_LABEL_Y).attr("transform", `rotate(-90,${Y_LABEL_X},${Y_LABEL_Y})`).text(Y_LABEL);
+
+        // Handle User events
+        function handleMouseOver(d) {
+            d3.select(this).style("fill", COLOR_SELECTED);
+            const label = labels
+              .filter(function(labelData) {
+                return labelData === d.srcElement.__data__;
+            });
+            label.style("visibility", "visible");
+            label.style("opacity", 1); 
+        }
+
+        function handleMouseOut(d) {
+            d3.select(this).style("fill", COLOR_NORMAL);
+            const label = labels
+                .filter(function(labelData) {
+                  return labelData === d.srcElement.__data__;
+              });
+            label.style("visibility", "hidden");
+        }
+
+    }).catch(function(error) {
+        console.log(error);
+    });
+    // Read and process data - End
+  </script>
+</body>
+</html>
+
