@@ -53,10 +53,13 @@
           .attr("width", WIDTH).attr("height", HEIGHT)
           .append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
 
-      // Read and process data - BEGIN
-      console.log("Reading csv")
-      d3.csv("data/books_gr_1.csv").then(function(data) {
+        // Read and process data - BEGIN
+        console.log("Reading csv")
+        d3.csv("data/books_gr_1.csv").then(function(data) {
         console.log("Read csv")
+
+        LAST_ROW = 50
+        data = data.slice(0, LAST_ROW);
 
         // Process CSV data - map the required fields
         const books = data.map(d => ({
