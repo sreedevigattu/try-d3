@@ -9,7 +9,6 @@
       height: 600px;
     }
     .node {
-      fill: steelblue;
       stroke: #fff;
       cursor: pointer;
     }
@@ -38,6 +37,7 @@
       const MARGIN            = { top: 100, right: 20, bottom: 60, left: 80 };
       const WIDTH             = WIDTH_ORIG - MARGIN.left - MARGIN.right;
       const HEIGHT            = HEIGHT_ORIG - MARGIN.top - MARGIN.bottom;
+      const COLOR_BKGND       =  "#f1e2cc";
 
       const TITLE             = "GoodReads Best Books Ever - Top 50"
       const X_LABEL           = "Pages"
@@ -45,17 +45,23 @@
       const Y_LABEL_X         = -MARGIN.left/1.5
       const Y_LABEL_Y         = HEIGHT/2
       const COLOR_NORMAL      = "steelblue"
-      const COLOR_SELECTED    = "#69b3a2"
+      const COLOR_SELECTED    = "#ffffff" // white
 
-      const RADIUS_BASE = 10
+      const RADIUS_BASE       = 10
+      const FONT_FAMILY       = "Comic Sans MS"
 
       const svg = d3.select(".chart")
           .attr("width", WIDTH).attr("height", HEIGHT)
-          .append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
-
-        // Read and process data - BEGIN
-        console.log("Reading csv")
-        d3.csv("data/books_gr_1.csv").then(function(data) {
+          .append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`)
+      
+      svg.append("rect")
+      .attr("width", "88%")
+      .attr("height", "73.5%")
+      .attr("fill", COLOR_BKGND); // Set the background color for the entire SVG
+      
+      // Read and process data - BEGIN
+      console.log("Reading csv")
+      d3.csv("data/books_gr_1.csv").then(function(data) {
         console.log("Read csv")
 
         LAST_ROW = 50
@@ -64,11 +70,13 @@
         // Process CSV data - map the required fields
         const books = data.map(d => ({
           title:       d.title,
+          genre:       d.genre__,
           pages:      +d.pages,
           votes:      +d.bbeVotes,
           numawards:  +d.num_awards
         }));
 
+        console.log(books)
         console.log("books", books.length, 
                     "Max Pages:", d3.max(books, d => +d.pages),
                     "Max Votes:", d3.max(books, d => +d.votes),)
@@ -82,7 +90,9 @@
         svg.append("g")
           .attr("class", "x-axis")
           .attr("transform", `translate(0, ${HEIGHT})`)
-          .call(xAxis);
+          .call(xAxis)
+          .selectAll("text") // Select all tick text elements
+          .style("font-family", FONT_FAMILY); // Set the font family for the ticks
 
         const yScale =  d3.scaleLinear()
           .domain([Y_MAX, 0]) 
@@ -90,7 +100,14 @@
         const yAxis = d3.axisLeft(yScale)
         svg.append("g")
             .attr("class", "y-axis")
-            .call(yAxis);
+            .call(yAxis)
+            .selectAll("text") // Select all tick text elements
+            .style("font-family", FONT_FAMILY); // Set the font family for the ticks
+
+        // Define color scale for categories
+        const colorScale = d3.scaleOrdinal()
+          .domain(data.map(d => d.genre))
+          .range(d3.schemeCategory10); // Using D3's categorical color scheme
 
         // Set up the bubbles
         const nodes = svg.selectAll(".node")
@@ -100,6 +117,7 @@
             .attr("r",  d => RADIUS_BASE + +d.numawards)
             .attr("cx", d => xScale(+d.pages))
             .attr("cy", d => yScale(+d.votes))
+            .style("fill", d => colorScale(d.genre))
             .style("opacity", "0.7")
           .on("mouseover", handleMouseOver)
           .on("mouseout", handleMouseOut);
@@ -112,21 +130,51 @@
             .attr("class", "text")
             .attr("x", d => xScale(+d.pages))
             .attr("y", d => (yScale(+d.votes))) 
-            .text(d => `${d.title} - ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
+            .text(d => `${d.title} - ${d.genre} ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
+            .style("font-family",FONT_FAMILY)
             .style("visibility", "hidden");
 
         // Set up the Title, axes labels
         svg.append("text").attr("class", "title")
           .attr("x", WIDTH / 4).attr("y", -MARGIN.top / 2)
-          .text(TITLE).style("font-family","Comic Sans MS");
+          .text(TITLE).style("font-family",FONT_FAMILY);
         svg.append("text").attr("class", "axis-label")
-          .attr("x", WIDTH / 3).attr("y", HEIGHT + MARGIN.bottom / 1.5).text(X_LABEL);
+          .attr("x", WIDTH / 3).attr("y", HEIGHT + MARGIN.bottom / 1.5)
+          .text(X_LABEL).style("font-family",FONT_FAMILY);
         svg.append("text").attr("class", "axis-label")
-          .attr("x", Y_LABEL_X ).attr("y", Y_LABEL_Y).attr("transform", `rotate(-90,${Y_LABEL_X},${Y_LABEL_Y})`).text(Y_LABEL);
+          .attr("x", Y_LABEL_X ).attr("y", Y_LABEL_Y).attr("transform", `rotate(-90,${Y_LABEL_X},${Y_LABEL_Y})`)
+          .text(Y_LABEL).style("font-family",FONT_FAMILY);
+
+      // Create a legend for the categories
+      const legend = svg.append("g")
+        .attr("transform", "translate(300, 30)"); // Position the legend
+
+      const legendItems = legend.selectAll(".legend-item")
+        .data(colorScale.domain())
+        .enter()
+        .append("g")
+        .attr("class", "legend-item")
+        .attr("transform", (d, i) => `translate(300, ${i * 20})`);
+
+      legendItems.append("rect")
+        .attr("width", 15).attr("height", 15).attr("fill", d => colorScale(d));
+
+      legendItems.append("text")
+        .attr("x", 20).attr("y", 10)
+        .attr("text-anchor", "start")
+        .text(d => d)
+        .style("font-family",FONT_FAMILY)
+        .style("font-size", "10px") 
+        .style("fill", d => colorScale(d));
 
         // Handle User events
         function handleMouseOver(d) {
             d3.select(this).style("fill", COLOR_SELECTED);
+            d3.select(this)
+              .attr("r",  d => RADIUS_BASE + +d.numawards + 5)
+              .style("fill", d => colorScale(d.genre))
+              .style("opacity", "1");
+          
             const label = labels
               .filter(function(labelData) {
                 return labelData === d.srcElement.__data__;
@@ -136,7 +184,10 @@
         }
 
         function handleMouseOut(d) {
-            d3.select(this).style("fill", COLOR_NORMAL);
+            d3.select(this)
+              .attr("r",  d => RADIUS_BASE + +d.numawards)
+              .style("fill", d => colorScale(d.genre))
+              .style("opacity", "0.7");
             const label = labels
                 .filter(function(labelData) {
                   return labelData === d.srcElement.__data__;
