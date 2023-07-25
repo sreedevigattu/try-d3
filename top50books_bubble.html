@@ -61,15 +61,7 @@
       let xScale;
       let yScale;
       let colorScale;
-      let labels; //labels2;
-
-      /*d3.select("body").append("div").style("border", "1px black solid").html("hello<br>world");
-
-      d3.selectAll("div")
-        .style("background-color", "pink")
-        .style("font-size", "24px")
-        .attr("class", "d3div")
-        .on("click", function() {alert("You clicked a div")})*/
+      let labels; 
       
       const svg = d3.select(".chart")
           .attr("width", WIDTH).attr("height", HEIGHT)
@@ -83,18 +75,6 @@
 
       // Add event listener to the input element to update the chart on change
       document.getElementById("dataPoints").addEventListener("change", drawChart);
-
-      svg.append("text").attr("dy", "0em").text("Hello")
-      svg.append("text").attr("dy", "1em").text("World")
-
-      /*    d3.select("svg").append("line")
-          .attr("x1", 30).attr("y1", 100).attr("x2", 250).attr("y2", 250)
-          .style("stroke","red").style("stroke-width","4px")
-
-      d3.select("svg").append('line')
-          .style("stroke", "lightgreen")
-          .style("stroke-width", 10)
-          .attr("x1", 0).attr("y1", 0).attr("x2", 200).attr("y2", 200); */
 
       title = svg.append("div")//.attr("class", "title")
             .attr("x", WIDTH / 3).attr("y", -MARGIN.top / 8)
@@ -162,9 +142,7 @@
         // Draw the bubbles
         const nodes = svg.selectAll(".node").data(filteredData).enter().call(drawBubble);
         console.log("nodes", nodes)
-        
-        svg.append("text").attr("dy", "0em").text("Hello")
-        svg.append("text").attr("dy", "1em").text("World")
+
         // Draw the hover-over texts and hide
         labels = svg.selectAll(".text").data(filteredData).enter()//.call(drawLabels);
             .append("text")
@@ -172,23 +150,12 @@
             .attr("x", d => xScale(+d.pages))
             .attr("y", d => (yScale(+d.votes))) 
             .attr("dy", "0em")
-            .text(d => `${d.title}`)// - ${d.genre} ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
+            .text(d => `${d.title} - ${d.genre} ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
             .style("font-family",FONT_FAMILY)
             .style("fill", "darkgrey")
             .style("visibility", "hidden");
 
-       /*labels2 = svg.selectAll(".text").data(filteredData).enter()//.call(drawLabels);
-            .append("text")
-            .attr("class", "text")
-            .attr("x", xScale(d => +d.pages))
-            .attr("y", yScale(d => +d.votes)) 
-            .attr("dy", "1em")
-            .text(d => `${d.genre}`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "visible");*/
-
-        //console.log("labels",typeof labels, labels)
+        console.log("labels",typeof labels, labels)
       }
 
       // Function to draw a single circle
@@ -303,7 +270,7 @@
 
       // Set up the Title, axes labels
       function setAxesTitle() {
-        title = svg.append("text")//.attr("class", "title")
+        title = svg.append("text").attr("class", "title")
             .attr("x", WIDTH / 3).attr("y", -MARGIN.top / 8)
             .text(`${TITLE} ${numBooks}`).style("font-family",FONT_FAMILY);
 
