@@ -62,6 +62,7 @@
       let yScale;
       let colorScale;
       let labels; 
+      let tooltip;
       
       const svg = d3.select(".chart")
           .attr("width", WIDTH).attr("height", HEIGHT)
@@ -76,9 +77,9 @@
       // Add event listener to the input element to update the chart on change
       document.getElementById("dataPoints").addEventListener("change", drawChart);
 
-      title = svg.append("div")//.attr("class", "title")
+      title = svg.append("text")//.attr("class", "title")
             .attr("x", WIDTH / 3).attr("y", -MARGIN.top / 8)
-            .html("Hey").style("font-family",FONT_FAMILY);
+            .html("").style("font-family",FONT_FAMILY);
         console.log("title", title, typeof title)
 
       // 1. Read and process data - BEGIN
@@ -108,6 +109,17 @@
         setAxesTitle()
 
         drawChart()
+
+        // Draw the hover-over texts and hide
+        tooltip = d3.select("body").append("div")
+                  .style("opacity", 1)
+                  .attr("class", "tooltip")
+                  .attr("width","800px")
+                  .style("background-color", "white")
+                  .style("border", "solid lightgrey")
+                  .style("border-width", "1px")
+                  .style("border-radius", "5px")
+                  .style("padding", "10px")
 
       }).catch(function(error) {
         console.log(error);
@@ -142,20 +154,8 @@
         // Draw the bubbles
         const nodes = svg.selectAll(".node").data(filteredData).enter().call(drawBubble);
         console.log("nodes", nodes)
-
-        // Draw the hover-over texts and hide
-        labels = svg.selectAll(".text").data(filteredData).enter()//.call(drawLabels);
-            .append("text")
-            .attr("class", "text")
-            .attr("x", d => xScale(+d.pages))
-            .attr("y", d => (yScale(+d.votes))) 
-            .attr("dy", "0em")
-            .text(d => `${d.title} - ${d.genre} ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "hidden");
-
-        console.log("labels",typeof labels, labels)
+        
+        console.log("tooltip", tooltip)
       }
 
       // Function to draw a single circle
@@ -173,74 +173,6 @@
           // For example, add event listeners, set attributes, etc.
           circle.on("mouseover", function () { handleMouseOver(d, this) })
                 .on("mouseout", function () { handleMouseOut(d, this)});
-        });
-      }
-
-      function drawLabel(d, visibility) {
-        svg.append("text")
-            .attr("class", "text")
-            .attr("x", xScale(+d.pages))
-            .attr("y", yScale(+d.votes)) 
-            .attr("dy", "0em")
-            .text(`${d.title}`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", visibility);
-      }
-
-      // Function to draw a single circle
-      function drawLabels(selection) {
-          selection.each(function (d) { 
-            //drawLabel(d, "hidden")
-            svg.append("text")
-              .attr("class", "text")
-              .attr("x", xScale(+d.pages))
-              .attr("y", yScale(+d.votes)) 
-              .attr("dy", "0em")
-              .text(`${d.title}`)
-              .style("font-family",FONT_FAMILY)
-              .style("fill", "darkgrey")
-              .style("visibility", "hidden");
-
-            /*svg.append("text")
-            .attr("class", "text")
-            .attr("x", xScale(+d.pages))
-            .attr("y", yScale(+d.votes)) 
-            .attr("dy", "1em")
-            .text(`${d.genre}`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "hidden");
-
-            svg.append("text")
-            .attr("class", "text")
-            .attr("x", xScale(+d.pages))
-            .attr("y", yScale(+d.votes)) 
-            .attr("dy", "2em")
-            .text(`${d.numawards} awards`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "hidden");
-
-            svg.append("text")
-            .attr("class", "text")
-            .attr("x", xScale(+d.pages))
-            .attr("y", yScale(+d.votes)) 
-            .attr("dy", "3em")
-            .text(`${d.pages} pages`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "hidden");
-
-            svg.append("text")
-            .attr("class", "text")
-            .attr("x", xScale(+d.pages))
-            .attr("y", yScale(+d.votes)) 
-            .attr("dy", "4em")
-            .text(`${+(d.votes)} votes`)
-            .style("font-family",FONT_FAMILY)
-            .style("fill", "darkgrey")
-            .style("visibility", "hidden");*/
         });
       }
 
@@ -295,49 +227,33 @@
           .attr("x", Y_LABEL_X ).attr("y", Y_LABEL_Y).attr("transform", `rotate(-90,${Y_LABEL_X},${Y_LABEL_Y})`)
           .text(Y_LABEL).style("font-family",FONT_FAMILY);
       }
-        
-      // Handle User events
-      function handleMouseOver(d, element) {
-          console.log("handleMouseOver", element, typeof element)
+
+      const handleMouseOver = function(d, element) {
+          console.log("handleMouseOver", typeof this, this, d)
           d3.select(element)
             .attr("r",  RADIUS_BASE + +d.numawards + 5)
             .style("fill", colorScale(d.genre))
             .style("opacity", "1"); 
 
-          console.log("d",d)
-          const label = labels
-            .filter(function(labelData) {
-              return labelData === d;
-              //return labelData.__data__ === d;
-          });
-          console.log("label", label, typeof label)
-          label.style("visibility", "visible");
-          label.style("opacity", 1);
+          const description = `${d.title} <br> <i>genre</i>&nbsp;&nbsp;&nbsp;: ${d.genre}  <br> <i>awards</i>: ${d.numawards}  <br> <i>pages</i>&nbsp;&nbsp;&nbsp;: ${d.pages} <br> <i>votes</i>&nbsp;&nbsp;&nbsp;&nbsp;: ${+(d.votes)}`; 
+          tooltip.html(description)
+            .style("left", (event.x)/2 + "px") // It is important to put the +90: other wise the tooltip is exactly where the point is an it creates a weird effect
+            .style("top", (event.y)/2 + "px")
+            .style("opacity", 1)
+        }
 
-          /*label = labels2
-            .filter(function(labelData) {
-              return labelData === d;
-              //return labelData.__data__ === d;
-          });
-          console.log("label", label, typeof label)
-          label.style("visibility", "visible");
-          label.style("opacity", 1);*/
-      }
-
-      function handleMouseOut(d, element) {
-          console.log("d",d, d.numawards)
+        // A function that change this tooltip when the leaves a point: just need to set opacity to 0 again
+        const handleMouseOut = function(d, element) {
           d3.select(element)
             .attr("r",  RADIUS_BASE + +d.numawards)
             .style("fill", colorScale(d.genre))
             .style("opacity", "0.7");
 
-          const label = labels
-              .filter(function(labelData) {
-                return labelData === d;
-                //return labelData.__data__ === d;
-            });
-          label.style("visibility", "hidden");
-      }
+          tooltip
+            .transition()
+            .duration(200)
+            .style("opacity", 0)
+        }
   </script>
 </body>
 </html>
