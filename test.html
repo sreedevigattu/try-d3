@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+  </head>
+
+  <body>
+    <svg style="width:500px; height:500px; border:1px lightgray solid;">
+    </svg> 
+    <script>
+      d3.select("body")
+          .append("div")
+          .style("border", "1px black solid")
+          .html("hello<br>world");
+
+    d3.selectAll("div")
+        .style("background-color", "pink")
+        .style("font-size", "24px")
+        .attr("class", "d3div")
+        .on("click", function() {alert("You clicked a div")})
+
+      d3.select("svg")
+    .append("line")
+    .attr({"x1":20, "y1":20, "x2":250, "y2":250})
+    .style("stroke","red")
+    .style("stroke-width","4px")
+
+    
+    </script>
+  </body>
+<html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .chart {
+      width: 800px;
+      height: 600px;
+      border:1px lightgray solid;
+    }
+    .node {
+      stroke: #fff;
+      cursor: pointer;
+    }
+    .text {
+      font-size: 12px;
+      text-anchor: middle;
+    }
+    .axis {
+      font-size: 10px;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+    }
+  </style>
+</head>
+
+<body>
+  <label for="dataPoints">Number of Books:</label>
+  <input type="number" id="dataPoints" value="10" min="10" max="50">
+  <br>
+  <svg class="chart"> </svg>
+  <div> </div>
+  <script>
+      // Constants
+      const WIDTH_ORIG        = 800;
+      const HEIGHT_ORIG       = 600;
+      const MARGIN            = { top: 100, right: 20, bottom: 60, left: 80 };
+      const WIDTH             = WIDTH_ORIG - MARGIN.left - MARGIN.right;
+      const HEIGHT            = HEIGHT_ORIG - MARGIN.top - MARGIN.bottom;
+      const COLOR_BKGND       =  "#f1e2cc";
+
+      const TITLE             = "GoodReads Best Books Ever - Top"
+      const X_LABEL           = "Pages"
+      const Y_LABEL           = "Votes"
+      const Y_LABEL_X         = -MARGIN.left/1.5
+      const Y_LABEL_Y         = HEIGHT/2
+
+      const COLOR_NORMAL      = "steelblue"
+      const COLOR_SELECTED    = "#ffffff" // white
+
+      const RADIUS_BASE       = 10
+      const FONT_FAMILY       = "Comic Sans MS"
+
+      // global variables
+      let top50Data;
+      let filteredData = {}
+      let numBooks = 10;
+      let xScale;
+      let yScale;
+      let colorScale;
+      let labels; 
+      
+      const svg = d3.select(".chart")
+          .attr("width", WIDTH).attr("height", HEIGHT)
+          .append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`)
+      console.log("svg", typeof svg, svg)
+
+      svg.append("rect")
+          .attr("width", "88%")
+          .attr("height", "73.5%")
+          .attr("fill", COLOR_BKGND); // Set the background color for the entire SVG
+
+      // Add event listener to the input element to update the chart on change
+      document.getElementById("dataPoints").addEventListener("change", drawChart);
+
+      title = svg.append("div")//.attr("class", "title")
+            .attr("x", WIDTH / 3).attr("y", -MARGIN.top / 8)
+            .html("Hey").style("font-family",FONT_FAMILY);
+        console.log("title", title, typeof title)
+
+      // 1. Read and process data - BEGIN
+      console.log("Reading csv")
+      d3.csv("data/books_gr_1.csv").then(function(data) {
+        top50Data = data.slice(0, 50);
+        console.log("Read csv",top50Data)
+
+        PAGES_MAX = d3.max(top50Data, d => +d.pages)
+        VOTES_MAX = d3.max(top50Data, d => +d.bbeVotes)
+        console.log("books", top50Data.length, "Max Pages:", PAGES_MAX, "Max Votes:", VOTES_MAX)
+        const X_MAX = Math.round(PAGES_MAX/200)*200+200;
+        const Y_MAX = Math.round(VOTES_MAX/5000)*5000+5000;
+        console.log("X_MAX", X_MAX, "Y_MAX", Y_MAX)
+
+        // Define color scale for categories
+        xScale = d3.scaleLinear().domain([0, X_MAX]).range([0, WIDTH]);
+        yScale =  d3.scaleLinear().domain([Y_MAX, 0]) .range([0, HEIGHT])
+        colorScale = d3.scaleOrdinal()
+          .domain(top50Data.map(d => d.genre__))
+          .range(d3.schemeCategory10); // Using D3's categorical color scheme
+
+        // Update the legend
+        console.log("legend", colorScale.domain())
+        setLegend(colorScale.domain());
+
+        setAxesTitle()
+
+        drawChart()
+
+      }).catch(function(error) {
+        console.log(error);
+      });
+
+      function filterData(data, numBooks) {
+          filteredData = data.slice(0, numBooks);
+          // Process CSV data - map the required fields
+          BOOKS = filteredData.map(d => ({
+            title:       d.title,
+            genre:       d.genre__,
+            pages:      +d.pages,
+            votes:      +d.bbeVotes,
+            numawards:  +d.num_awards
+          }));
+          console.log("BOOKS-1", BOOKS)
+          return BOOKS
+      }
+
+      function setScales() {
+        
+      }
+
+      function drawChart() {
+        console.log("drawChart-->data", top50Data)
+        numBooks = +document.getElementById("dataPoints").value;
+        title.text(`${TITLE} ${numBooks}`);
+
+        filteredData = filterData(top50Data, numBooks)
+        console.log(filteredData)
+
+        // Draw the bubbles
+        const nodes = svg.selectAll(".node").data(filteredData).enter().call(drawBubble);
+        console.log("nodes", nodes)
+
+        // Draw the hover-over texts and hide
+        labels = svg.selectAll(".text").data(filteredData).enter()//.call(drawLabels);
+            .append("text")
+            .attr("class", "text")
+            .attr("x", d => xScale(+d.pages))
+            .attr("y", d => (yScale(+d.votes))) 
+            .attr("dy", "0em")
+            .text(d => `${d.title} - ${d.genre} ${d.numawards} awards ${d.pages} pages ${+(d.votes)} votes`) 
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", "hidden");
+
+        console.log("labels",typeof labels, labels)
+      }
+
+      // Function to draw a single circle
+      function drawBubble(selection) {
+          selection.each(function (d) { 
+          const circle = svg.append("circle")
+              .attr("class", "node")
+              .attr("cx", xScale(+d.pages))
+              .attr("cy", yScale(+d.votes))
+              .attr("r", RADIUS_BASE + +d.numawards)
+              .style("fill", colorScale(d.genre))
+              .style("opacity", "0.7");
+          
+          // You can perform further actions on each circle if needed
+          // For example, add event listeners, set attributes, etc.
+          circle.on("mouseover", function () { handleMouseOver(d, this) })
+                .on("mouseout", function () { handleMouseOut(d, this)});
+        });
+      }
+
+      function drawLabel(d, visibility) {
+        svg.append("text")
+            .attr("class", "text")
+            .attr("x", xScale(+d.pages))
+            .attr("y", yScale(+d.votes)) 
+            .attr("dy", "0em")
+            .text(`${d.title}`)
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", visibility);
+      }
+
+      // Function to draw a single circle
+      function drawLabels(selection) {
+          selection.each(function (d) { 
+            //drawLabel(d, "hidden")
+            svg.append("text")
+              .attr("class", "text")
+              .attr("x", xScale(+d.pages))
+              .attr("y", yScale(+d.votes)) 
+              .attr("dy", "0em")
+              .text(`${d.title}`)
+              .style("font-family",FONT_FAMILY)
+              .style("fill", "darkgrey")
+              .style("visibility", "hidden");
+
+            /*svg.append("text")
+            .attr("class", "text")
+            .attr("x", xScale(+d.pages))
+            .attr("y", yScale(+d.votes)) 
+            .attr("dy", "1em")
+            .text(`${d.genre}`)
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", "hidden");
+
+            svg.append("text")
+            .attr("class", "text")
+            .attr("x", xScale(+d.pages))
+            .attr("y", yScale(+d.votes)) 
+            .attr("dy", "2em")
+            .text(`${d.numawards} awards`)
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", "hidden");
+
+            svg.append("text")
+            .attr("class", "text")
+            .attr("x", xScale(+d.pages))
+            .attr("y", yScale(+d.votes)) 
+            .attr("dy", "3em")
+            .text(`${d.pages} pages`)
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", "hidden");
+
+            svg.append("text")
+            .attr("class", "text")
+            .attr("x", xScale(+d.pages))
+            .attr("y", yScale(+d.votes)) 
+            .attr("dy", "4em")
+            .text(`${+(d.votes)} votes`)
+            .style("font-family",FONT_FAMILY)
+            .style("fill", "darkgrey")
+            .style("visibility", "hidden");*/
+        });
+      }
+
+      function setLegend(categories) {
+        console.log("setLegend",categories)
+        // Create a legend for the categories
+        const legend = svg.selectAll(".legend")
+            .data(categories)
+            .enter()
+            .append("g")
+            .attr("class", "legend")
+            .attr("transform", (d, i) => `translate(600, ${i * 20})`);
+
+        legend.append("rect")
+          .attr("width", 15).attr("height", 15)
+          .style("fill", colorScale);
+
+        legend.append("text")
+          .attr("x", 20).attr("y", 9)
+          .attr("text-anchor", "start")
+          .attr("dy", ".35em")  
+          .text(d => d)
+          .style("font-family",FONT_FAMILY)
+          .style("font-size", "10px") 
+          .style("fill", colorScale);
+      }
+
+      // Set up the Title, axes labels
+      function setAxesTitle() {
+        title = svg.append("text").attr("class", "title")
+            .attr("x", WIDTH / 3).attr("y", -MARGIN.top / 8)
+            .text(`${TITLE} ${numBooks}`).style("font-family",FONT_FAMILY);
+
+        const xAxis = d3.axisBottom(xScale);
+        svg.append("g")
+          .attr("class", "x-axis")
+          .attr("transform", `translate(0, ${HEIGHT})`)
+          .call(xAxis)
+          .selectAll("text") // Select all tick text elements
+          .style("font-family", FONT_FAMILY); // Set the font family for the ticks
+        svg.append("text").attr("class", "axis-label")
+          .attr("x", WIDTH / 3).attr("y", HEIGHT + MARGIN.bottom / 1.5)
+          .text(X_LABEL).style("font-family",FONT_FAMILY);
+
+        const yAxis = d3.axisLeft(yScale)
+        svg.append("g")
+            .attr("class", "y-axis")
+            .call(yAxis)
+            .selectAll("text") // Select all tick text elements
+            .style("font-family", FONT_FAMILY); // Set the font family for the ticks
+        svg.append("text").attr("class", "axis-label")
+          .attr("x", Y_LABEL_X ).attr("y", Y_LABEL_Y).attr("transform", `rotate(-90,${Y_LABEL_X},${Y_LABEL_Y})`)
+          .text(Y_LABEL).style("font-family",FONT_FAMILY);
+      }
+        
+      // Handle User events
+      function handleMouseOver(d, element) {
+          console.log("handleMouseOver", element, typeof element)
+          d3.select(element)
+            .attr("r",  RADIUS_BASE + +d.numawards + 5)
+            .style("fill", colorScale(d.genre))
+            .style("opacity", "1"); 
+
+          console.log("d",d)
+          const label = labels
+            .filter(function(labelData) {
+              return labelData === d;
+              //return labelData.__data__ === d;
+          });
+          console.log("label", label, typeof label)
+          label.style("visibility", "visible");
+          label.style("opacity", 1);
+
+          /*label = labels2
+            .filter(function(labelData) {
+              return labelData === d;
+              //return labelData.__data__ === d;
+          });
+          console.log("label", label, typeof label)
+          label.style("visibility", "visible");
+          label.style("opacity", 1);*/
+      }
+
+      function handleMouseOut(d, element) {
+          console.log("d",d, d.numawards)
+          d3.select(element)
+            .attr("r",  RADIUS_BASE + +d.numawards)
+            .style("fill", colorScale(d.genre))
+            .style("opacity", "0.7");
+
+          const label = labels
+              .filter(function(labelData) {
+                return labelData === d;
+                //return labelData.__data__ === d;
+            });
+          label.style("visibility", "hidden");
+      }
+  </script>
+</body>
+</html>
