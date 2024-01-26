@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My first SVG</title>
+  <link rel="stylesheet" type="text/css" rel="noopener" target="_blank" href="1.css">
+  <script src="//d3js.org/d3.v5.min.js"></script>
+</head>
+<body>
+    <!-- 1, 2: Draw 3 circles : html --> 
+    <svg width="250" height="50" style="border:1px solid red;">
+        <circle cx="20"  cy="25" r="10" fill="red"/> 
+        <circle cx="60"  cy="25" r="10" fill="red"/> 
+        <circle cx="100" cy="25" r="10" fill="red"/> 
+    </svg> 
+    &nbsp&nbsp
+
+    <!-- 3: Draw 3 circles : d3js --> 
+    <script>
+        var viz = {width: 250, height: 50 , fill: "red"}
+
+        // Create a container
+        var container = d3.select("body")
+                    .append("svg")
+                    .attr("width", viz.width)
+                    .attr("height", viz.height)
+                    .style("style", "outline: thin solid red;") 
+
+        // Draw a rectangle
+        container.append("rect")
+            .attr("x", 0).attr("y", 0).attr("height", 50).attr("width", 250)
+            .style("stroke", viz.fill)
+            .style("fill", "none")
+            .style("stroke-width", 2);
+
+        // 3: Draw 3 circles
+        var xpos = [ 1, 2, 3]
+        var radius = 10
+        var circles = container.selectAll("circle")
+            .data(xpos)
+            .enter()
+            .append("circle")
+            .attr('id', function(d) { return "c_" + d; })
+            .attr("cx", function(d) { return 20 + (d-1)*(radius+30) })
+            .attr("cy", 25)
+            .attr("r", radius)
+            .attr("fill", 'red')
+
+        // 4. Change center position and color for the first circle
+        container.select("circle")
+                .transition().duration(1000).ease(d3.easeLinear).delay(1000)
+                .attr('cx', 20+20).attr('fill', 'blue');
+
+        // 5. Change the radius
+        var radii = [ 5, 10, 15]
+        var circles = container.selectAll("circle")
+            .data(radii)
+            .attr("r", function(d) { return d })
+    </script>
+
+    <br><br>
+
+    <!-- 1, 2: Draw bars : html --> 
+    <svg width="250" height="100" style="border:1px solid red;">
+        <rect x="0" y="10"  width="40" height="25"/>
+        <rect x="0" y="40" width="100" height="25"/>
+        <rect x="0" y="70" width="55" height="25"/>
+    </svg>
+
+    &nbsp&nbsp
+    <!-- Draw bars : d3js --> 
+    <script>
+        // Create a container
+        var bar_container = d3.select("body")
+            .append("svg")
+            .attr("width", 200)
+            .attr("height", 100 )
+            .attr("style", "outline: thin solid red;") 
+
+        // 3: Draw 3 circles
+        var bar_widths = [ 8, 20, 11]
+        var scale = d3.scaleLinear()
+              .domain([0, d3.max(bar_widths)])
+              .range([0, 150])
+
+        var color = d3.scaleLinear()
+            .domain([d3.min(bar_widths), d3.max(bar_widths)])
+            .range(["red", "green"])
+
+        var bars = bar_container.selectAll("bar")
+            .data(bar_widths)
+            .enter()
+            .append("rect")
+            .attr("x", 10)
+            .attr("y", function(d, i) { return i*20 + 20 })
+            .attr("width", function(d) { return scale(d) })
+            .attr("height", 10)
+            .attr("fill", function(d) {return color(d)})
+
+    </script>
+
+    <br><br>
+    <!-- Draw bars : d3js - read data from a file --> 
+    <script>
+        d3.csv("data/countries.csv").then(showData)
+
+        function showData(data) {
+            console.log(data);console.log(data[0].country)
+
+            //var color = d3.scaleLinear()
+            //    //.domain([d3.min(data), d3.max(data)])
+            //    .domain([0, 200])
+            //    .range(["red", "green"])
+
+            // Create a svg
+            var svg_bar = d3.select("body").append("svg")
+                .attr("width", 300).attr("height", 200 )
+                .attr("style", "outline: thin solid darkgray;") 
+
+            // Draw bars
+            svg_bar.selectAll("bar1").data(data).enter().append("rect")
+                .attr("x", 10).attr("y", function(d, i) { return i*20 + 20 })
+                .transition().duration(1000).ease(d3.easeBounceOut)
+                .attr("width", function(d) { return d.gold }).attr("height", 10)
+                .attr("fill", 'darkgray')    
+                //.attr("fill", function(d) {return color(d)})                    // Fill darkgray for all countries
+                .filter(function(d) { return d.gold > 100 }).attr("fill", 'gold') // Fill gold for countries with gold>100 
+
+            // Annotate
+            svg_bar.selectAll("text1").data(data).enter().append("text")
+                .transition().duration(1000).delay(2000).ease(d3.easeLinear)
+                .attr("x", function(d) { return +d.gold+15 }).attr("y", function(d, i) { return i*20 + 25 })
+                .text(function(d) { return d.country }).attr("font-size", "10px")
+        }
+        /*
+        TODO: 
+        - Make a website with svelte
+        - Add some graphs using d3.js
+        - Use the Olympics dataset
+        */
+    </script> 
+</body>
+</html>

@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <style>
+            .line{
+                fill: none;
+                stroke: blue;
+            }
+        </style>
+    </head>
+    <body>
+        <svg id="container" height="300" width="500" style="border: solid 1px black" >
+            <g id="body" transform="translate(50,50)"> </g>
+        </svg>
+    </body>
+    <script src="https://d3js.org/d3.v5.min.js"  charset="utf-8"></script>
+    <script>
+        let body = d3.select("#body")
+        d3.csv("data/data-line.csv").then(showData)
+
+        function showData(data) {
+            let bodyHeight = 200
+            let bodyWidth  = 400
+
+            // Transform data
+            data = data.map(d => ({
+                date: new Date(d.date),
+                price: +d.price
+            }))
+
+            let maxValue = d3.max(data, d => d.price)
+            console.log(maxValue)
+
+            // Map data to image space
+            let yScale = d3.scaleLinear()
+                .range([bodyHeight, 0])
+                .domain([0, maxValue])
+            console.log(yScale)
+            body.append("g")
+                .call(d3.axisLeft(yScale))
+
+            let xScale = d3.scaleTime()
+                .domain(d3.extent(data, d => d.date))
+                .range([0, bodyWidth])    
+            console.log(xScale)
+
+            // Draw the chart
+            body.append("g")
+                .attr("transform", "translate(0,"+bodyHeight + ")")
+                .call(d3.axisBottom(xScale)
+                        .tickFormat(d3.timeFormat("%b")))
+
+            valueLine = d3.line()
+                .x(d => xScale(d.date))
+                .y(d => yScale(d.price))
+                .defined(d => !!d.price)
+
+            body.append("path")
+                .datum(data)
+                .attr("d", valueLine)
+                .attr("class", "line")
+        }
+
+    </script>
+</html>

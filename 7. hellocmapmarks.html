@@ -1,0 +1,55 @@
+<html>
+    <head>
+        <style>
+            .line{
+                fill: none;
+                stroke: blue;
+            }
+        </style>
+    </head>
+    <body>
+        <svg id="container" height="300" width="500" style="border: solid 1px black" >
+            <g id="body" transform="translate(0,0)"> </g>
+        </svg>
+    </body>
+    <script src="https://d3js.org/d3.v5.min.js"  charset="utf-8"></script>
+    <script>
+        let body = d3.select("#body")
+        Promise.all([
+            d3.csv("data/data-cmapmarks.csv"), 
+            d3.json("data/countries.geo.json")
+        ]).then(showData)
+
+        function showData(dataSources) {
+            let data = dataSources[0]
+            let mapInfo = dataSources[1]
+
+            let bodyHeight = 400
+            let bodyWidth  = 400
+
+            let projection = d3.geoMercator()
+                    .scale(70)
+                    .translate([bodyWidth/2, bodyHeight/2])
+
+            let path = d3.geoPath()
+                .projection(projection)
+
+            body.selectAll("path").data(mapInfo.features)
+                .enter().append("path")
+                .attr("d", d => path(d))
+                .attr("stroke", "#999")
+                .attr("fill", "#eee")
+            
+            console.log(data)
+
+            body.selectAll("circle").data(data)
+                .enter().append("circle").attr("r", 2)
+                .attr("fill", "#0055AA")
+                .style("opacity", 0.5)
+                .attr("cx", d => projection([+d.Longitude, +d.Latitude])[0])
+                .attr("cy", d => projection([+d.Longitude, +d.Latitude])[1])
+            
+        }
+
+    </script>
+</html>

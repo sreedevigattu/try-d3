@@ -1,0 +1,71 @@
+<html>
+    <head>
+        <style>
+            .line{
+                fill: none;
+                stroke: blue;
+            }
+        </style>
+    </head>
+    <body>
+        <svg id="container" height="300" width="500" style="border: solid 1px black" >
+            <g id="body" transform="translate(0,0)"> </g>
+        </svg>
+    </body>
+    <script src="https://d3js.org/d3.v5.min.js"  charset="utf-8"></script>
+    <script>
+        let body = d3.select("#body")
+        Promise.all([
+            d3.csv("data/data-cmap.csv"), 
+            d3.json("data/countries.geo.json")
+        ]).then(showData)
+
+        function showData(dataSources) {
+            let data = dataSources[0]
+            let mapInfo = dataSources[1]
+
+            //console.log(data)
+
+            // Create a map of country to the magnitude for easy access
+            let dataIndex = {}
+            for (let c of data) {
+                let country = c.Country
+                dataIndex[country] = +c.Magnitude
+            }
+            console.log(dataIndex)
+
+            // Add magnitude to the properties of mapInfo for convenient access
+            mapInfo.features = mapInfo.features.map(d=> {
+                let country = d.properties.name
+                let magnitude = dataIndex[country]
+                d.properties.Magnitude = magnitude
+                return d
+            })
+            console.log(mapInfo)
+
+            // 
+            let medianEarthquake = d3.median(mapInfo.features, d => d.properties.Magnitude)
+            let maxEarthquake = d3.max(mapInfo.features, d => d.properties.Magnitude)
+            let cScale = d3.scaleLinear()
+                .domain([0, medianEarthquake, maxEarthquake])
+                .range(["white", "orange", "red"])
+
+            let bodyHeight = 400
+            let bodyWidth  = 400
+
+            let projection = d3.geoMercator()
+                    .scale(80)
+                    .translate([bodyWidth/2, bodyHeight/2])
+
+            let path = d3.geoPath()
+                .projection(projection)
+
+            body.selectAll("path").data(mapInfo.features)
+                .enter().append("path")
+                .attr("d", d => path(d))
+                .attr("stroke", "black")
+                .attr("fill", d => d.properties.Magnitude ? cScale(d.properties.Magnitude) : "white")
+        }
+
+    </script>
+</html>

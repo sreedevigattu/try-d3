@@ -1,0 +1,107 @@
+<!-- 
+  Dataset : GoodReads Best Books https://www.kaggle.com/datasets/thedevastator/comprehensive-overview-of-52478-goodreads-best-b
+  bbeVotes	The number of votes cast for the book on GoodReads' Best Books Ever list. (Integer) 
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://d3js.org/d3.v3.min.js"></script>
+  <script src="https://cdn.rawgit.com/jasondavies/d3-cloud/v1.2.5/build/d3.layout.cloud.js"></script>
+
+  <style>
+    @font-face {
+      font-family: 'MarkerFelt';
+      src: url('fonts/Marker Felt.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Monaco';
+      src: url('fonts/Monaco.ttf') format('truetype');
+    }
+
+    @font-face {
+      font-family: 'Lucida Handwriting';
+      src: url('fonts/Lucida Handwriting Italic.ttf') format('truetype');
+    }
+
+    .wordcloud {
+      width:  1200px;
+      height: 800px;
+      margin: 0 auto;
+      background-color: #22252E; 
+    }
+
+  </style>
+
+</head>
+<body>
+  <div id="wordcloud" class="wordcloud"></div>
+
+  <script>
+    // Font families for different categories
+    const font = {
+      YoungAdult:         { family: "Comic Sans MS",      color : "#D13C3C" }, 
+      Fantasy:            { family: "Fantasy",            color : "#F2AE30" },
+      Classics:           { family: "Lucida Handwriting", color : "#C0D1C7" },
+      HistoricalFiction : { family: "Impact",             color : "#D5D67F" },
+      ScienceFiction :    { family: "Lucida Grande",      color : "#A3836E" },
+      Childrens :         { family: "Monaco",             color : "#78DE98" },
+      Fiction:            { family: "Comic Sans MS",      color : "#D96704" }
+    }
+
+    console.log("Reading csv")
+
+    d3.csv("data/books_gr.csv", function(error, data) {
+      if (error) throw error;
+
+      console.log("Read csv")
+      LAST_ROW = 50
+      data = data.slice(0, LAST_ROW+1);
+
+      // Find the maximum value in the desired column
+      const maxValue = d3.max(data, d => +d.bbeVotes);
+
+      // Process CSV data
+      const words = data.map(d => ({
+        text: d.title,
+        size: (+d.bbeVotes / maxValue) * 45, // Adjust the scaling factor as needed
+        category: d.genre
+      }));
+
+      console.log(1, words[0]["text"], words[0]["size"], words[0]["category"], font[words[0]["category"]]['family'])
+
+      console.log(LAST_ROW, words[LAST_ROW]["text"], words[LAST_ROW]["size"], words[LAST_ROW]["category"], font[words[LAST_ROW]["category"]]['family'])
+
+    // Set up the word cloud layout
+    const layout = d3.layout.cloud()
+      .size([1200, 800])
+      .words(words)
+      .padding(5)
+      .rotate(() => ~~(Math.random() * 2) * 90) // Randomly rotate words
+      .fontSize(d => d.size)
+      .fontStyle(d => d.font)
+      .on("end", draw);
+
+    layout.start();
+
+    // Draw the word cloud
+    function draw(words) {
+      d3.select("#wordcloud")
+        .append("svg").attr("width", layout.size()[0]).attr("height", layout.size()[1])
+        .append("g")
+        .attr("transform", "translate(" + layout.size()[0] / 2 + "," + layout.size()[1] / 2 + ")")
+        .selectAll("text")
+        .data(words)
+        .enter().append("text")
+        .style("font-size", d => d.size + "px")
+        .style("fill", d => font[d.category] ? font[d.category].color : "black" )
+        .style("font-family", d => font[d.category] ? font[d.category].family : "sans-serif" )
+        .attr("text-anchor", "middle")
+        .attr("transform", d => "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")")
+        .text(d => d.text );
+    }
+  });
+  </script>
+</body>
+</html>

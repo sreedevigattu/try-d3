@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Learning D3.js</title>
+  <link rel="stylesheet" type="text/css" rel="noopener" target="_blank" href="styles/barscatter.css">
+  <script src="//d3js.org/d3.v5.min.js"></script>
+</head>
+<body>
+    <script>
+        // Display text
+        var data = [1, 2, 3]
+        d3.select("body")       // select the body
+            .selectAll("p")     // empty <p> selections to be used later
+            .data(data)         // parses data, and runs below operations n times
+            .enter()            // creates new data-bound element
+            .append("p")        // append <p> tag for each datum
+            .text(function(d) {return "Number " + d})  // changes attribute's value  
+            .style("font-size", "16px") // change font-size to 24px
+            .style("color", function(d) {
+                if (d%2 == 0) { return "red" }  // if even
+            })  
+        </script>
+        &nbsp&nbsp
+        <script>
+
+        // Create svg container
+        var viz = {width: 250, height: 50, background: "red"}
+        var svg = d3.select("body")
+                    .append("svg")
+                    .attr("width", viz.width)
+                    .attr("height", viz.height)
+                    .style("background", viz.background)
+
+        // Draw circles of increasing radius
+        var radius = [5, 10, 15, 20]
+        var circles = svg.selectAll("circle")
+                        .data(radius)
+                        .enter()
+                        .append("circle")
+        circles.attr("cx", function(d) { return 10*d})
+            .attr("cy", 25)
+            .attr("r", function(d) { return d})
+    </script>
+
+    &nbsp&nbsp
+    <!--- Draw circles -->
+    <svg style="border:1px solid red;">
+        <circle cx="60" cy="60" r="50"/>
+        <circle cx="200" cy="60" r="50"
+            fill="blue"
+            stroke="lightgray" stroke-width="2"/> 
+    </svg>
+
+    <!--- Draw shapes -->
+    <svg width="200" height="150" id="parent">
+        <circle cx="25" cy="25" r="20" class="ball"/>
+        <ellipse cx="75" cy="25" rx="50" ry="20" class="ball"/>
+        <rect x="25" y="25" width="40" height="80" class="pad"/>
+        <text x="75" y="75">Magic!</text>
+        <path d="M75 100 L50 150 L150 150 Z"/>
+    </svg>
+
+    <!--- Draw bar charts -->
+    &nbsp&nbsp
+    <script>
+        // Create a svg container
+        var svg_bar = d3.select("body")
+            .append("svg")
+            .attr("width", 200)
+            .attr("height", 120 )
+            .attr("style", "outline: thin solid blue;") 
+
+        // 3: Draw 3 circles
+        var bar_widths = [ 40, 100, 55]
+        svg_bar.selectAll("bar")
+            .data(bar_widths)
+            .enter()
+            .append("rect")
+            .attr("x", 10)
+            .attr("y", function(d, i) { return i*30 + 20 })
+            .attr("width", function(d) { return d })
+            .attr("height", 20)
+            .attr("fill", 'blue')
+
+        // After creating basic barchart
+        svg_bar.selectAll("text")
+            .data(bar_widths)
+            .enter()
+            .append("text")
+            .text(function(d) {return d})
+            .attr("y", function(d, i) {return i*30 + 30})
+            .attr("x", function(d) {return d-15})
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "10px")
+            .attr("fill", "white")
+    </script>
+
+    <br> <br>
+
+    &nbsp&nbsp
+    <script>
+        // Read the data
+        d3.csv("data/countries.csv").then(showData)
+
+        function showData(data) {
+            var country = [],
+                gold = [],
+                silver = [];
+
+            data.map(function(d) {
+                country.push(d.country);
+                gold.push(d.gold);
+                silver.push(d.silver);
+            })
+            console.log(data);console.log(data[0], data[0].country)
+            console.log(country);console.log(gold)
+
+            var WIDTH_1 = 250, HEIGHT_1 = 250; 
+
+            var svg_scatter = d3.select("body").append("svg")
+                .attr("width", WIDTH_1).attr("height", HEIGHT_1)
+                .attr("style", "outline: thin solid black;") 
+
+            // Draw the axes
+            svg_scatter.selectAll("circle").data(data).enter()
+                .append("circle")
+                .attr("cx", function(d) { return d.gold })
+                .attr("cy", function(d) { return d.silver })
+                .attr("r", 10)
+                .attr("fill", function(d) {return "rgb("+d.gold+","+d.silver+",0)"})
+        }
+    </script>
+
+    &nbsp&nbsp
+    <script>
+        // Define function which reads data from csv and shows scatter plot
+        function showData(data) {
+            var SVG_PADDING = 50, SVG_WIDTH = 400, SVG_HEIGHT = 400;
+            var DOMAIN_PADDING = 50
+            var RADIUS = 10;
+            var country = [], gold = [], silver = [];
+
+            // Read data
+            data.map(function(d) {
+                country.push(d.country);
+                gold.push(+d.gold);         // convert to int, else the max function will not work correctly
+                silver.push(+d.silver);     // convert to int, else the max function will not work correctly
+            })
+            console.log(data);console.log(data[0], data[0].country)
+            console.log(country)
+            console.log("Golds:", gold,  "MIN:", d3.min(gold), "MAX:", d3.max(gold))
+            console.log("Silvers:", silver, "MIN:", d3.min(silver), "MAX:", d3.max(silver))
+
+            // Create SVG
+            var svg_scatter = d3.select("body").append("svg")
+                .attr("width", SVG_WIDTH).attr("height", SVG_HEIGHT)
+                .attr("style", "outline: thin solid black;") 
+
+            // Create scales
+            let xscale = d3.scaleLinear().range([SVG_PADDING, SVG_WIDTH-SVG_PADDING]).domain([0, d3.max(gold)+DOMAIN_PADDING])
+            let yscale = d3.scaleLinear().range([SVG_PADDING, SVG_HEIGHT-SVG_PADDING]).domain([d3.max(silver)+DOMAIN_PADDING, 0])
+
+            function COLOR_CIRCLE(d){  
+                return "rgb("+d.gold+", "+d.silver+",0)"
+            }  
+
+            var circles = svg_scatter.selectAll("circle").data(data).enter()
+                .append("circle")
+                .attr("cx", function(d) { return (xscale(d.gold))   })
+                .attr("cy", function(d) { return (yscale(d.silver)) })
+                //.attr("r", RADIUS)
+                .attr("r", function(d) {return Math.sqrt(d.gold*d.gold+d.silver*d.silver)/10})
+                .attr("fill", function(d) {return COLOR_CIRCLE(d)})
+
+            // TODO: 
+            // Axes should start from -10 onwards so that the circle is not cut
+            // Show hover text of the number of golds, silvers, total
+            // On clicking the circle, circle should pop out  or go to an external site
+
+            var xaxis = d3.axisBottom(xscale).ticks(5)
+            var yaxis = d3.axisLeft(yscale).ticks(5)
+
+            svg_scatter.append("g").attr("class", "axis").call(xaxis)
+                .attr("transform", "translate(0," + (SVG_HEIGHT - SVG_PADDING) + ")").call(xaxis)
+            svg_scatter.append("g").attr("class", "axis").call(yaxis)
+                .attr("transform", "translate(" + SVG_PADDING + ",0)").call(yaxis)
+
+            // Annotate
+            svg_scatter.selectAll("annotation").data(data).enter().append("text")
+                .transition().duration(1000).delay(500).ease(d3.easeLinear)
+                .attr("x", function(d) { return xscale(d.gold)+10 })
+                .attr("y", function(d) { return yscale(d.silver) })
+                .text(function(d) { return d.country }).attr("font-size", "10px")
+
+            // Define the div for the tooltip
+            var tip = d3.select("body").append("div")
+                .attr("class", "tooltip").style("opacity", 0)
+
+            circles.on("mouseover", function(d) {
+                d3.select(this).attr("fill" , "rgb(0,0,0)");
+
+            tip.style("opacity", 1)
+                .html(d.country + "<br/> Gold: " + d.gold + "<br/> Silver: " + d.silver)
+                .style("left", (d3.event.pageX-25) + "px")
+                .style("top", (d3.event.pageY-75) + "px")
+            })
+
+            circles.on("mouseout", function(d) {
+                d3.select(this)
+                .transition().duration(500)
+                .attr("fill", function(d) {return COLOR_CIRCLE(d)})
+            tip.style("opacity", 0)
+            })
+        }
+
+
+        function myFunction() {
+            // Read the data
+            d3.csv("data/countries.csv").then(showData)
+        }
+
+        myFunction()
+    </script>
+    <br>
+    <script>
+        var data = [20, 60, 10, 10]
+        var pie = d3.layout.pie()
+        var piedata = pie(data)
+
+        var arcs = svg.selectAll("g")
+            .data(piedata)  
+            .enter()
+            .append("g")
+            .attr("transform", "translate(" + outerRadius + "," + outerRadius + ")")
+    // Create arc function with parameters
+    var arc = d3.svg.arc()
+            .innerRadius(innerRadius)
+            .outerRadius(outerRadius)
+    // Draw arc paths
+    arcs.append("path")
+        .attr("d", arc)
+    </script>
+
+
+</body>
+</html>

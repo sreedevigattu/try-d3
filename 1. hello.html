@@ -1,0 +1,151 @@
+<head>
+    Demonstrate <br>
+    1. Change content <br>
+    2. Add, remove elements <br>
+    3. Change properties <br>
+    4. Handle data - sort, filter, transform (map & reduce), extent
+</head>
+<body>
+    <div id="page-header"> 
+        <h1>Hello world! Hey!</h1>
+        <img id="pic" src="olympicslogo.png" width=200 height=200/>
+        <p class="main-paragraph">1. Line </p>
+        <p>2. line</p>
+        <ul id="itemlist">
+            <li>Item 1</li>
+            <li>Item 2</li>
+            <li>Item 3</li>
+        </ul>
+        <button onclick="change1()">Change 1</button>
+        <button onclick="changeAll()">Change All</button>
+        <button onclick="reset()">Reset</button>
+
+        <div>
+            <button onclick="add()">Add</button>
+            <button onclick="removeAll()">Remove All</button>
+            <button onclick="removeLast()">Remove Last</button>
+        </div>
+
+        <div>
+            <button onclick="changeImage()">Change Image</button>
+            <button onclick="changeColor()">Change Color</button>
+        </div>
+
+        <br> <br>
+        <h2> Handle data </h2> 
+        <div>
+            <button onclick="showAllData()"> showAllData</button>
+            <button onclick="showFilteredData()">showFilteredData</button>
+        </div>
+        <div id="container"> </div>
+    </div>
+</body>
+<script src="https://d3js.org/d3.v5.min.js"  charset="utf-8"></script>
+<script>
+    let header = d3.select("page-header")
+    console.log(header)
+    let para = d3.selectAll("p")
+    console.log(para)
+    
+    // CHANGE CONTENT for first item
+    function change1() {
+        let selection = d3.select(".main-paragraph")
+        selection.text("Changed content")
+        selection.html("Changed <b>content</b>")
+    }
+
+    // CHANGE CONTENT for all items
+    function changeAll() {
+        d3.selectAll("p").html("Changed <b>content</b>")
+    }   
+
+    function reset() {
+        let selection2 = d3.selectAll("p")
+        console.log(selection2)
+        console.log(selection2._parents[0])
+        selection2.text("Line")
+    }
+
+    let itemlist = d3.select("#itemlist")
+    function count() {
+        return itemlist.selectAll("li").size()
+    }
+
+    // ADDREMOVE item
+    function add() {
+        c = count() + 1
+        itemlist.append("li")
+            .text("Item " + c)
+    }
+
+    // ADDREMOVE - first item
+    function removeAll() {
+        itemlist.selectAll("li").remove()
+    }
+
+    // ADDREMOVE - all items
+    function removeLast() {
+        c = count()
+        itemlist.select("li:last-child").remove()
+    }
+
+    // CHANGEPROPERTIES - 1 item
+    function changeImage() {
+        d3.select("#pic").attr("src","toad.png")
+    }
+
+    // CHANGEPROPERTIES - 1 item
+    function changeColor() {
+        let selection = d3.select(".main-paragraph")
+        let color = selection.style("color")
+        if (color === "red") {
+            selection.style("color","blue")
+        } else {
+            selection.style("color","red")
+        }
+
+        selection.html("Changed <b>content</b>")
+    }
+
+    // HANDLE DATA - sort, filter, transform (map & reduce)
+    let container = d3.select("#container")
+
+    function showAllData() {
+        write("Showing All Data")
+        d3.csv("data/data.csv").then(function(data) {
+            showData(data)
+        })
+    }
+
+    function showFilteredData() {
+        write("Showing Filtered Data")
+        d3.csv("data/data.csv").then(function(data) {
+            data.sort((a, b)=>{return d3.ascending(a.name, b.name)})
+            data.map(d=>{
+                    d.nextgrade = d.grade+1
+                    return d
+                })
+            let filteredData = data.filter(d=>{ return d.grade > 9 })
+            showData(filteredData)
+        })
+    }
+        
+    function showData(data) {
+        for (let student of data) { 
+            write(student.name + " " + student.grade + " " + student.nextgrade)            
+        }
+        write("--------------------")
+
+        let sum = data.reduce((prev, curr) => { return prev + curr.grade}, 0)
+        write(sum)
+
+        write(d3.extent(data, data => { return data.grade}))
+        write("--------------------")
+    }
+
+    write("--------------------")
+
+    function write(text) {
+        container.append("div").text(text)
+    }
+</script>
