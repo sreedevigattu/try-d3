@@ -1,0 +1,26 @@
+#parent {
+    border:1px solid #000;
+  }
+  .ball {
+    fill: red;
+  }
+  ellipse.ball {
+    stroke: black;
+  }
+  .pad {
+    fill: blue;
+  }
+  text {
+    font-size: 12px;
+  }
+  path {
+    opacity: 0.3;
+    stroke-width: 5px;
+    stroke: red;
+  }
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgb(200, 196, 196);
+    color: rgb(39, 37, 37);
+  }
